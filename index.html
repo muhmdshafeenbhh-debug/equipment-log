@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AL SHUWAIB - Daily Equipment Log</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #f4f6f9; margin: 0; padding: 12px; color: #333; }
+    .container { max-width: 1280px; margin: 0 auto; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    
+    h2 { text-align: center; color: #1a365d; margin-top: 0; margin-bottom: 8px; font-size: 18px; text-transform: uppercase; }
+    
+    /* Project Header Card */
+    .project-card { background: #1a365d; color: white; padding: 12px; border-radius: 6px; font-size: 12px; margin-bottom: 12px; }
+    .project-card .title { font-size: 13px; font-weight: bold; margin-bottom: 6px; text-align: center; color: #f6ad55; text-transform: uppercase; }
+    .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px; }
+    
+    .reset-btn { background-color: #e53e3e; color: white; border: none; padding: 5px 10px; font-size: 11px; font-weight: bold; border-radius: 4px; cursor: pointer; float: right; }
+    .reset-btn:hover { background-color: #c53030; }
+
+    .meta-group { display: flex; flex-wrap: wrap; justify-content: space-between; margin-bottom: 15px; gap: 10px; background: #edf2f7; padding: 10px; border-radius: 6px; }
+    .meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: bold; }
+    .meta-item input { padding: 5px 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px; }
+
+    .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .search-box { flex-grow: 1; }
+    .search-box input { width: 100%; padding: 8px 12px; font-size: 13px; border: 2px solid #2b6cb0; border-radius: 6px; background-color: #fff; }
+
+    .add-btn { background-color: #2b6cb0; color: white; border: none; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+    .share-btn { background-color: #319795; color: white; border: none; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+    .import-btn { background-color: #d69e2e; color: white; border: none; padding: 8px 12px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer; }
+
+    .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 15px; min-width: 1200px; }
+    th, td { border: 1px solid #cbd5e0; padding: 6px 4px; text-align: left; font-size: 11px; }
+    th { background-color: #2b6cb0; color: white; text-align: center; font-weight: 600; font-size: 11px; }
+    tr:nth-child(even) { background-color: #f7fafc; }
+    
+    input[type="time"], input[type="text"], input[type="number"], input[type="date"], select {
+      width: 100%; padding: 4px 2px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 11px; box-sizing: border-box; -webkit-appearance: none;
+    }
+    input[type="number"] { text-align: center; }
+    
+    .readonly-field { background-color: #e2e8f0; font-weight: bold; text-align: center; }
+    .equipment-name { font-weight: bold; color: #2d3748; display: block; }
+    .operator-label { font-weight: 600; color: #2b6cb0; display: block; margin-bottom: 2px; }
+    .plate-no { font-size: 10px; color: #718096; display: block; }
+    .disabled-input { background-color: #edf2f7; cursor: not-allowed; }
+    
+    .row-btn { font-size: 10px; padding: 3px 4px; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 2px; }
+    .save-btn { background-color: #38a169; color: white; }
+    .edit-op-btn { background-color: #d69e2e; color: white; }
+    .delete-btn { background-color: #e53e3e; color: white; }
+    .locked-btn { background-color: #718096; color: white; cursor: not-allowed; }
+
+    .action-btn { display: block; width: 100%; background-color: #2b6cb0; color: white; border: none; padding: 12px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; text-align: center; margin-top: 10px; }
+
+    /* Print Optimizations */
+    @media print {
+      body { background-color: #fff; padding: 0; }
+      .container { box-shadow: none; padding: 0; max-width: 100%; }
+      .action-btn, .toolbar, .btn-col, .reset-btn, #logDatePicker { display: none !important; }
+      #printDateDisplay { display: inline-block !important; }
+      #loadsTotalRow, #volumeTotalRow { display: table-row !important; }
+      tr { display: table-row !important; }
+      input, select { border: none !important; background: transparent !important; padding: 0 !important; }
+      /* Hide placeholder text (e.g. "Start", "End", "0", "Activity", "Location")
+         so empty/unfilled cells print blank instead of showing the placeholder hint. */
+      input::placeholder { color: transparent !important; opacity: 0 !important; }
+      input::-webkit-input-placeholder { color: transparent !important; opacity: 0 !important; }
+      input::-moz-placeholder { color: transparent !important; opacity: 1 !important; }
+      input:-ms-input-placeholder { color: transparent !important; }
+      .project-card { background: #1a365d !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .meta-group { background: transparent; padding: 0; border-bottom: 2px solid #333; }
+      th { background-color: #2b6cb0 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { size: landscape; margin: 6mm; }
+    }
+
+    /* ===== Access Gate ===== */
+    #accessGateOverlay {
+      position: fixed; inset: 0; background: #f4f6f9; z-index: 9999;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    #accessGateOverlay .gate-card {
+      background: #fff; max-width: 380px; width: 100%; padding: 28px 24px;
+      border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); text-align: center;
+    }
+    #accessGateOverlay h3 { color: #1a365d; margin: 0 0 6px; font-size: 17px; }
+    #accessGateOverlay p { color: #718096; font-size: 13px; margin: 0 0 18px; }
+    #accessGateOverlay .gsi-holder { display: flex; justify-content: center; }
+    #accessGateOverlay .denied-box {
+      display: none; margin-top: 14px; background: #fff5f5; border: 1px solid #feb2b2;
+      color: #c53030; font-size: 12px; padding: 10px; border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== Access Gate (Google Sign-In email allow-list) ===== -->
+<div id="accessGateOverlay">
+  <div class="gate-card">
+    <h3>🔒 Restricted Log</h3>
+    <p>Sign in with your approved Google account to continue.</p>
+    <div class="gsi-holder" id="gsiButtonDiv"></div>
+    <div class="denied-box" id="accessDeniedBox">
+      Access denied. This Google account is not authorized to open this log.
+    </div>
+  </div>
+</div>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<div class="container" id="mainAppContainer" style="display:none;">
+  <button class="reset-btn" onclick="protectedReset()">🔄 New Shift (Reset)</button>
+  <h2>DAILY EQUIPMENT LOG</h2>
+  
+  <div class="project-card">
+    <div class="title">AL SHUWAIB, AL AIN NORTHERN SECTOR - INFRASTRUCTURE & LANDSCAPING WORKS</div>
+    <div class="project-grid">
+      <div><strong>Developer:</strong> ALDAR</div>
+      <div><strong>Consultant:</strong> CORE ENGINEERING CONSULTANCY</div>
+      <div><strong>Contractor:</strong> Nael & Bin Harmal Hydroexport</div>
+    </div>
+  </div>
+
+  <div class="meta-group">
+    <div class="meta-item">
+      <label>📅 Date:</label>
+      <input type="date" id="logDatePicker" value="2026-01-09" onchange="updateFormattedDate(); saveToStorage();">
+      <span id="printDateDisplay" style="display: none; font-weight: bold;"></span>
+    </div>
+    <div class="meta-item">
+      <label>👷 Engineer:</label>
+      <input type="text" id="engineer" value="Muhammed Shafeek" readonly class="readonly-field">
+    </div>
+    <div class="meta-item">
+      <label>✍️ Supervisor:</label>
+      <input type="text" id="supervisor" value="Chhotelal" placeholder="Enter supervisor name" onchange="saveToStorage()">
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <input type="text" id="searchInput" onkeyup="filterVehicles()" placeholder="🔍 Quick Search Plate No., Operator, or Equipment...">
+    </div>
+    <button class="add-btn" onclick="addNewEquipmentPrompt()">➕ Add Equipment</button>
+    <button class="share-btn" onclick="exportSetupConfig()">📤 Share Config</button>
+    <button class="import-btn" onclick="document.getElementById('configFileInput').click()">📥 Import Config</button>
+    <input type="file" id="configFileInput" style="display: none;" accept=".json" onchange="importSetupConfig(event)">
+    <button class="add-btn" style="background-color:#38a169;" onclick="loadFromStorage()">🔄 Refresh</button>
+  </div>
+  <div id="syncStatus" style="font-size: 11px; color: #718096; margin-top: -8px; margin-bottom: 8px; text-align: right;"></div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 3%;">Sr.</th>
+          <th style="width: 12%;">Equipment Details</th>
+          <th style="width: 10%;">Operator Name</th>
+          <th style="width: 6%;">Start</th>
+          <th style="width: 6%;">Stop</th>
+          <th style="width: 9%;">Break-down</th>
+          <th style="width: 10%;">Meter Start/End</th>
+          <th style="width: 5%;">Diesel (L)</th>
+          <th style="width: 9%;">Work Area</th>
+          <th style="width: 9%;">Work Done (m³)</th>
+          <th style="width: 5%;">Loads</th>
+          <th style="width: 6%;">Status</th>
+          <th style="width: 5%;">Total Hrs</th>
+          <th style="width: 5%;" class="btn-col">Action</th>
+        </tr>
+      </thead>
+      <tbody id="equipmentTableBody">
+      </tbody>
+      <tfoot>
+        <tr id="volumeTotalRow" style="display:none;">
+          <td colspan="9" style="text-align:right; font-weight:bold;">TOTAL VOLUME:</td>
+          <td id="volumeTotalValue" style="font-weight:bold; text-align:center;"></td>
+          <td colspan="3"></td>
+        </tr>
+        <tr id="loadsTotalRow" style="display:none;">
+          <td colspan="10" style="text-align:right; font-weight:bold;">TOTAL LOADS:</td>
+          <td id="loadsTotalValue" style="font-weight:bold; text-align:center;"></td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <button class="action-btn" onclick="triggerPDF()">📄 SUBMIT LOG</button>
+</div>
+
+<script>
+  const RESET_PIN = "1234";
+  const STORAGE_KEY = "shuwaib_equipment_log_v15"; // Updated version to clear old column order cache cleanly
+  const EXPIRY_TIME_MS = 12 * 60 * 60 * 1000;
+
+  // NOTE: Access is restricted here using client-side Google Sign-In, since
+  // this page is now hosted on a normal domain (not inside Apps Script's
+  // sandboxed iframe), which lets Google Identity Services work correctly.
+  // 1. Create an OAuth Client ID (Web application) at:
+  //      https://console.cloud.google.com/apis/credentials
+  //    Under "Authorized JavaScript origins", add the exact origin this page
+  //    is hosted on, e.g. https://yourusername.github.io
+  // 2. Paste the generated Client ID below, replacing the placeholder.
+  const GOOGLE_CLIENT_ID = "PASTE_YOUR_GOOGLE_OAUTH_CLIENT_ID_HERE.apps.googleusercontent.com";
+  const ALLOWED_EMAILS = [
+    "muhmdshafee.nbhh@gmail.com",
+    "subhanatb540@gmail.com"
+  ];
+
+  function parseJwt(token) {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function grantAccess() {
+    document.getElementById('accessGateOverlay').style.display = 'none';
+    document.getElementById('mainAppContainer').style.display = '';
+    loadFromStorage();
+  }
+
+  function handleCredentialResponse(response) {
+    const payload = parseJwt(response.credential);
+    const email = payload && payload.email ? payload.email.toLowerCase() : '';
+    const isVerified = payload && payload.email_verified;
+
+    if (isVerified && ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(email)) {
+      try { sessionStorage.setItem('shuwaib_log_authed_email', email); } catch (e) {}
+      grantAccess();
+    } else {
+      document.getElementById('accessDeniedBox').style.display = 'block';
+      document.getElementById('gsiButtonDiv').style.display = 'none';
+    }
+  }
+
+  function initAccessGate() {
+    let cachedEmail = null;
+    try { cachedEmail = sessionStorage.getItem('shuwaib_log_authed_email'); } catch (e) {}
+    if (cachedEmail && ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(cachedEmail.toLowerCase())) {
+      grantAccess();
+      return;
+    }
+
+    if (typeof google === 'undefined' || !google.accounts) {
+      setTimeout(initAccessGate, 200);
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredentialResponse
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('gsiButtonDiv'),
+      { theme: 'filled_blue', size: 'large', text: 'signin_with', shape: 'pill' }
+    );
+  }
+
+
+  // ===== SHARED STORAGE (Google Apps Script + Drive) =====
+  // Paste the /exec URL from your Apps Script Web App deployment below.
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwJn2fBIpznUEUSL_djYRlLQhLN66Vj-xKrIygjO58hXfjHZ-3Yo3Udv1ehGJ6kGT4Z/exec";
+
+  function setSyncStatus(text) {
+    const el = document.getElementById('syncStatus');
+    if (el) el.textContent = text;
+  }
+
+  let equipmentList = [
+    { name: "JCB", plate: "AD 99324", operator: "Amir", hasTrips: false },
+    { name: "Excavator", plate: "AD 66174", operator: "Anakit", hasTrips: false },
+    { name: "Shovel", plate: "AD 53739", operator: "Lakhveer", hasTrips: false },
+    { name: "Dozer", plate: "AD 98262", operator: "Arasad", hasTrips: false },
+    { name: "Six Wheel 1", plate: "AD 70553", operator: "Abudu Dahab", hasTrips: true },
+    { name: "Six Wheel 2", plate: "AD 99358", operator: "Amin", hasTrips: true },
+    { name: "Dump Truck 1", plate: "DXB 54138", operator: "Sarjeet Singh", hasTrips: true },
+    { name: "Dump Truck 2", plate: "AD 56517", operator: "Muhammad Hanif", hasTrips: true },
+    { name: "Dump Truck 3", plate: "AD 57898", operator: "Zaffar Iqbal Khan", hasTrips: true },
+    { name: "Dump Truck 4", plate: "AD 78182", operator: "Musawar Iqbal", hasTrips: true }
+  ];
+
+  const tbody = document.getElementById('equipmentTableBody');
+
+  function updateFormattedDate() {
+    const rawVal = document.getElementById('logDatePicker').value;
+    if (!rawVal) return;
+
+    const [year, month, day] = rawVal.split('-');
+    const formatted = `${day}/${month}/${year.slice(-2)}`;
+
+    document.getElementById('printDateDisplay').textContent = formatted;
+  }
+
+  function renderTable() {
+    tbody.innerHTML = '';
+    equipmentList.forEach((item, index) => {
+      appendRow(item, index);
+    });
+  }
+
+  function appendRow(item, index) {
+    const row = document.createElement('tr');
+    row.setAttribute('data-searchable', `${item.name} ${item.plate} ${item.operator}`.toLowerCase());
+    row.setAttribute('data-edit-count', '0');
+    row.dataset.eqKey = `${item.name}|||${item.plate}`;
+    
+    const workRate = getWorkRate(item.name);
+
+    const tripsInput = item.hasTrips 
+      ? `<input type="number" placeholder="0" class="trips-count" min="0" onchange="calculateWorkDone(${index}); saveToStorage();">` 
+      : `<input type="text" value="N/A" class="readonly-field disabled-input" disabled>`;
+
+    const workDoneCell = workRate
+      ? `<input type="text" class="work-done readonly-field" readonly value="0 m\u00B3">`
+      : `<input type="text" placeholder="Activity" class="work-done" onchange="saveToStorage()">`;
+
+    row.innerHTML = `
+      <td style="text-align: center; font-weight: bold;" class="sr-no">${index + 1}</td>
+      <td>
+        <span class="equipment-name">${item.name}</span>
+        <span class="plate-no">${item.plate}</span>
+      </td>
+      <td>
+        <span class="operator-label">${item.operator}</span>
+      </td>
+      <td><input type="time" class="start-time" onchange="calculateHours(${index}); saveToStorage();"></td>
+      <td><input type="time" class="end-time" onchange="calculateHours(${index}); saveToStorage();"></td>
+      <td>
+        <div style="display: flex; gap: 2px;">
+          <input type="time" class="bd-start" onchange="calculateHours(${index}); saveToStorage();">
+          <input type="time" class="bd-end" onchange="calculateHours(${index}); saveToStorage();">
+        </div>
+      </td>
+      <td>
+        <div style="display: flex; gap: 2px;">
+          <input type="number" placeholder="Start" class="meter-start" onchange="saveToStorage()">
+          <input type="number" placeholder="End" class="meter-end" onchange="saveToStorage()">
+        </div>
+      </td>
+      <td><input type="number" placeholder="0" class="diesel-liters" onchange="saveToStorage()"></td>
+      <td><input type="text" placeholder="Location" class="work-area" onchange="saveToStorage()"></td>
+      <td>${workDoneCell}</td>
+      <td>${tripsInput}</td>
+      <td>
+        <select class="eq-status" onchange="saveToStorage()">
+          <option value="Working">Working</option>
+          <option value="Breakdown">Breakdown</option>
+          <option value="Idle">Idle</option>
+        </select>
+      </td>
+      <td><input type="text" class="work-hours readonly-field" readonly value="0.0"></td>
+      <td class="btn-col">
+        <button class="row-btn save-btn" onclick="toggleLockRow(${index})">Lock Log</button>
+        <button class="row-btn edit-op-btn" onclick="editEquipmentDetails(${index})">✏️ Edit</button>
+        <button class="row-btn delete-btn" onclick="deleteRow(${index})">❌ Delete</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  // Six Wheel loaders and Dump Trucks get an automatically computed Work Done value.
+  // Rate is matched by equipment name so it also applies to any newly added
+  // equipment named "Six Wheel ..." or "Dump Truck ...".
+  function getWorkRate(name) {
+    const n = (name || '').toLowerCase();
+    if (n.includes('six wheel')) return 15;
+    if (n.includes('dump truck')) return 20;
+    return null;
+  }
+
+  function calculateWorkDone(rowIndex) {
+    const row = tbody.children[rowIndex];
+    const item = equipmentList[rowIndex];
+    if (!row || !item) return;
+    const workRate = getWorkRate(item.name);
+    if (!workRate) return;
+    const tripsInput = row.querySelector('.trips-count');
+    const workDoneField = row.querySelector('.work-done');
+    if (!tripsInput || !workDoneField) return;
+    const loads = parseFloat(tripsInput.value);
+    const total = isNaN(loads) ? 0 : (loads * workRate);
+    workDoneField.value = `${total} m\u00B3`;
+  }
+
+  function recalcAllWorkDone() {
+    equipmentList.forEach((item, i) => calculateWorkDone(i));
+  }
+
+  // Snapshot all entered values by equipment identity (not row index), so they
+  // survive a renderTable() call triggered by add/delete/operator-rename actions.
+  function captureRowData() {
+    const map = {};
+    Array.from(tbody.children).forEach(row => {
+      const key = row.dataset.eqKey;
+      if (!key) return;
+      const tripsInput = row.querySelector('.trips-count');
+      map[key] = {
+        meterStart: row.querySelector('.meter-start').value,
+        meterEnd: row.querySelector('.meter-end').value,
+        startTime: row.querySelector('.start-time').value,
+        endTime: row.querySelector('.end-time').value,
+        bdStart: row.querySelector('.bd-start').value,
+        bdEnd: row.querySelector('.bd-end').value,
+        diesel: row.querySelector('.diesel-liters').value,
+        workArea: row.querySelector('.work-area').value,
+        workDone: row.querySelector('.work-done').value,
+        trips: tripsInput ? tripsInput.value : null,
+        status: row.querySelector('.eq-status').value,
+        workHours: row.querySelector('.work-hours').value,
+        editCount: row.getAttribute('data-edit-count'),
+        locked: row.querySelector('.save-btn').disabled
+      };
+    });
+    return map;
+  }
+
+  function restoreRowData(map) {
+    Array.from(tbody.children).forEach(row => {
+      const data = map[row.dataset.eqKey];
+      if (!data) return;
+
+      row.querySelector('.meter-start').value = data.meterStart;
+      row.querySelector('.meter-end').value = data.meterEnd;
+      row.querySelector('.start-time').value = data.startTime;
+      row.querySelector('.end-time').value = data.endTime;
+      row.querySelector('.bd-start').value = data.bdStart;
+      row.querySelector('.bd-end').value = data.bdEnd;
+      row.querySelector('.diesel-liters').value = data.diesel;
+      row.querySelector('.work-area').value = data.workArea;
+      row.querySelector('.work-done').value = data.workDone;
+      const tripsInput = row.querySelector('.trips-count');
+      if (tripsInput && data.trips !== null) tripsInput.value = data.trips;
+      row.querySelector('.eq-status').value = data.status;
+      row.querySelector('.work-hours').value = data.workHours;
+      row.setAttribute('data-edit-count', data.editCount || '0');
+
+      const edits = parseInt(data.editCount || '0', 10);
+      const button = row.querySelector('.save-btn');
+      const inputs = row.querySelectorAll('input:not(.readonly-field), select');
+
+      if (edits >= 2) {
+        inputs.forEach(input => input.disabled = true);
+        button.textContent = "🔒 Locked";
+        button.className = "row-btn locked-btn";
+        button.disabled = true;
+      } else if (data.locked) {
+        inputs.forEach(input => input.disabled = true);
+        button.textContent = `Edit (${2 - edits} left)`;
+      }
+    });
+    recalcAllWorkDone();
+  }
+
+  function calculateHours(rowIndex) {
+    const row = tbody.children[rowIndex];
+    const startTime = row.querySelector('.start-time').value;
+    const endTime = row.querySelector('.end-time').value;
+    const bdStart = row.querySelector('.bd-start').value;
+    const bdEnd = row.querySelector('.bd-end').value;
+    const hoursOutput = row.querySelector('.work-hours');
+
+    if (!startTime || !endTime) {
+      hoursOutput.value = "0.0";
+      return;
+    }
+
+    let startMin = getMinutes(startTime);
+    let endMin = getMinutes(endTime);
+
+    if (endMin < startMin) endMin += 24 * 60;
+
+    let grossMinutes = endMin - startMin;
+
+    const breakStart = 12 * 60; 
+    const breakEnd = 15 * 60;   
+
+    let standardBreakDeduction = 0;
+    const overlapStart = Math.max(startMin, breakStart);
+    const overlapEnd = Math.min(endMin, breakEnd);
+
+    if (overlapStart < overlapEnd) {
+      standardBreakDeduction = overlapEnd - overlapStart;
+    }
+
+    let breakdownMinutes = 0;
+    if (bdStart && bdEnd) {
+      let bdS = getMinutes(bdStart);
+      let bdE = getMinutes(bdEnd);
+      if (bdE < bdS) bdE += 24 * 60;
+      // Only count the portion of the breakdown that actually falls within
+      // the shift window (start-time to end-time); a breakdown span logged
+      // before the shift started (or after it ended) shouldn't be deducted.
+      const bdOverlapStart = Math.max(startMin, bdS);
+      const bdOverlapEnd = Math.min(endMin, bdE);
+      if (bdOverlapStart < bdOverlapEnd) {
+        breakdownMinutes = bdOverlapEnd - bdOverlapStart;
+      }
+    }
+
+    let netMinutes = grossMinutes - standardBreakDeduction - breakdownMinutes;
+    const netHours = Math.max(0, netMinutes / 60);
+
+    hoursOutput.value = netHours.toFixed(1);
+  }
+
+  function getMinutes(timeStr) {
+    const [hrs, mins] = timeStr.split(':').map(Number);
+    return hrs * 60 + mins;
+  }
+
+  function editEquipmentDetails(index) {
+    const item = equipmentList[index];
+    const oldKey = `${item.name}|||${item.plate}`;
+
+    const newName = prompt("Update Equipment Name:", item.name);
+    if (newName === null) return; // user cancelled
+
+    const newPlate = prompt("Update Equipment Number / Plate:", item.plate);
+    if (newPlate === null) return; // user cancelled
+
+    const newOp = prompt("Update Operator Name:", item.operator);
+    if (newOp === null) return; // user cancelled
+
+    // Snapshot current row values BEFORE changing name/plate, since row data
+    // is keyed by equipment name+plate.
+    const snapshot = captureRowData();
+
+    item.name = newName.trim() !== "" ? newName.trim() : item.name;
+    item.plate = newPlate.trim() !== "" ? newPlate.trim() : item.plate;
+    item.operator = newOp.trim() !== "" ? newOp.trim() : item.operator;
+
+    // Re-map the snapshot entry to the new key so this row's entered values
+    // (times, meter readings, loads, etc.) aren't lost by the rename.
+    const newKey = `${item.name}|||${item.plate}`;
+    if (snapshot[oldKey] && newKey !== oldKey) {
+      snapshot[newKey] = snapshot[oldKey];
+    }
+
+    renderTable();
+    restoreRowData(snapshot);
+    reindexRows();
+    saveToStorage();
+  }
+
+  function addNewEquipmentPrompt() {
+    const eqName = prompt("Enter Equipment Name:");
+    if (!eqName) return;
+    const plateNo = prompt("Enter Plate / ID Number:", "DXB -----");
+    const opName = prompt("Enter Constant Operator Name:", "Unassigned");
+    const hasTrips = confirm("Does this equipment track Loads / Trips?");
+
+    const newItem = { 
+      name: eqName, 
+      plate: plateNo || "DXB -----", 
+      operator: opName || "Unassigned", 
+      hasTrips: hasTrips 
+    };
+    
+    equipmentList.push(newItem);
+    const snapshot = captureRowData();
+    renderTable();
+    restoreRowData(snapshot);
+    reindexRows();
+    saveToStorage();
+  }
+
+  function deleteRow(index) {
+    if (confirm(`Are you sure you want to delete ${equipmentList[index].name} (${equipmentList[index].plate})?`)) {
+      equipmentList.splice(index, 1);
+      const snapshot = captureRowData();
+      renderTable();
+      restoreRowData(snapshot);
+      reindexRows();
+      saveToStorage();
+    }
+  }
+
+  function reindexRows() {
+    Array.from(tbody.children).forEach((row, i) => {
+      row.querySelector('.sr-no').textContent = i + 1;
+      row.querySelector('.start-time').setAttribute('onchange', `calculateHours(${i}); saveToStorage();`);
+      row.querySelector('.end-time').setAttribute('onchange', `calculateHours(${i}); saveToStorage();`);
+      row.querySelector('.bd-start').setAttribute('onchange', `calculateHours(${i}); saveToStorage();`);
+      row.querySelector('.bd-end').setAttribute('onchange', `calculateHours(${i}); saveToStorage();`);
+      const tripsInput = row.querySelector('.trips-count');
+      if (tripsInput) tripsInput.setAttribute('onchange', `calculateWorkDone(${i}); saveToStorage();`);
+      row.querySelector('.save-btn').setAttribute('onclick', `toggleLockRow(${i})`);
+      row.querySelector('.edit-op-btn').setAttribute('onclick', `editEquipmentDetails(${i})`);
+      row.querySelector('.delete-btn').setAttribute('onclick', `deleteRow(${i})`);
+    });
+    recalcAllWorkDone();
+  }
+
+  function exportSetupConfig() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(equipmentList));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "shuwaib_equipment_config.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  }
+
+  function importSetupConfig(event) {
+    const fileReader = new FileReader();
+    fileReader.onload = function(e) {
+      try {
+        const importedList = JSON.parse(e.target.result);
+        if (Array.isArray(importedList)) {
+          equipmentList = importedList;
+          renderTable();
+          saveToStorage();
+          alert("Equipment list imported successfully!");
+        }
+      } catch (err) {
+        alert("Invalid configuration file.");
+      }
+    };
+    fileReader.readAsText(event.target.files[0]);
+  }
+
+  function toggleLockRow(index) {
+    const row = tbody.children[index];
+    const button = row.querySelector('.save-btn');
+    const inputs = row.querySelectorAll('input:not(.readonly-field), select');
+    let edits = parseInt(row.getAttribute('data-edit-count'), 10);
+
+    if (button.textContent.includes("Lock")) {
+      inputs.forEach(input => input.disabled = true);
+      edits += 1;
+      row.setAttribute('data-edit-count', edits);
+
+      if (edits >= 2) {
+        button.textContent = "🔒 Locked";
+        button.className = "row-btn locked-btn";
+        button.disabled = true;
+      } else {
+        button.textContent = `Edit (${2 - edits} left)`;
+        button.className = "row-btn save-btn";
+      }
+    } else {
+      inputs.forEach(input => input.disabled = false);
+      button.textContent = "Lock Log";
+    }
+    saveToStorage();
+  }
+
+  function filterVehicles() {
+    const filterValue = document.getElementById('searchInput').value.toLowerCase().trim();
+    const rows = tbody.getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+      const searchableText = rows[i].getAttribute('data-searchable');
+      rows[i].style.display = searchableText.includes(filterValue) ? "" : "none";
+    }
+  }
+
+  function saveToStorage() {
+    const rowsData = [];
+    Array.from(tbody.children).forEach(row => {
+      rowsData.push({
+        meterStart: row.querySelector('.meter-start').value,
+        meterEnd: row.querySelector('.meter-end').value,
+        startTime: row.querySelector('.start-time').value,
+        endTime: row.querySelector('.end-time').value,
+        bdStart: row.querySelector('.bd-start').value,
+        bdEnd: row.querySelector('.bd-end').value,
+        diesel: row.querySelector('.diesel-liters').value,
+        workArea: row.querySelector('.work-area').value,
+        workDone: row.querySelector('.work-done').value,
+        trips: row.querySelector('.trips-count') ? row.querySelector('.trips-count').value : 'N/A',
+        status: row.querySelector('.eq-status').value,
+        workHours: row.querySelector('.work-hours').value,
+        editCount: row.getAttribute('data-edit-count'),
+        isLocked: row.querySelector('.save-btn').disabled || row.querySelector('.save-btn').textContent.includes('Edit')
+      });
+    });
+
+    const payload = {
+      timestamp: new Date().getTime(),
+      logDatePicker: document.getElementById('logDatePicker').value,
+      supervisor: document.getElementById('supervisor').value,
+      equipmentList: equipmentList,
+      rows: rowsData
+    };
+
+    setSyncStatus("Saving...");
+    fetch(WEBAPP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify(payload)
+    })
+      .then(res => res.json())
+      .then(() => setSyncStatus("✅ Saved & synced " + new Date().toLocaleTimeString()))
+      .catch(err => {
+        console.error(err);
+        setSyncStatus("⚠️ Save failed — check internet / Web App URL");
+      });
+  }
+
+  function loadFromStorage() {
+    setSyncStatus("Loading shared data...");
+    fetch(WEBAPP_URL)
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.timestamp) {
+          renderTable();
+          updateFormattedDate();
+          setSyncStatus("No shared data yet — enter today's log to create it.");
+          return;
+        }
+
+      // Equipment list is permanent: it is loaded regardless of shift expiry
+      // and is only ever removed by the user pressing Delete on a row.
+      if (data.equipmentList) equipmentList = data.equipmentList;
+
+      const now = new Date().getTime();
+
+      if (now - data.timestamp > EXPIRY_TIME_MS) {
+        renderTable();
+        updateFormattedDate();
+        setSyncStatus("Previous shift expired — starting fresh (equipment list preserved).");
+        saveToStorage(); // persist the retained equipment list under a fresh timestamp
+        return;
+      }
+
+      renderTable();
+
+      if (data.logDatePicker) document.getElementById('logDatePicker').value = data.logDatePicker;
+      if (data.supervisor) document.getElementById('supervisor').value = data.supervisor;
+
+      updateFormattedDate();
+
+      (data.rows || []).forEach((rowData, index) => {
+        if (!tbody.children[index]) return;
+        const row = tbody.children[index];
+
+        row.querySelector('.meter-start').value = rowData.meterStart || '';
+        row.querySelector('.meter-end').value = rowData.meterEnd || '';
+        row.querySelector('.start-time').value = rowData.startTime || '';
+        row.querySelector('.end-time').value = rowData.endTime || '';
+        row.querySelector('.bd-start').value = rowData.bdStart || '';
+        row.querySelector('.bd-end').value = rowData.bdEnd || '';
+        row.querySelector('.diesel-liters').value = rowData.diesel || '';
+        row.querySelector('.work-area').value = rowData.workArea || '';
+        row.querySelector('.work-done').value = rowData.workDone || '';
+        if (row.querySelector('.trips-count')) row.querySelector('.trips-count').value = rowData.trips || '';
+        row.querySelector('.eq-status').value = rowData.status || 'Working';
+        row.querySelector('.work-hours').value = rowData.workHours || '0.0';
+
+        row.setAttribute('data-edit-count', rowData.editCount || '0');
+
+        const edits = parseInt(rowData.editCount || '0', 10);
+        const button = row.querySelector('.save-btn');
+        const inputs = row.querySelectorAll('input:not(.readonly-field), select');
+
+        if (edits >= 2) {
+          inputs.forEach(input => input.disabled = true);
+          button.textContent = "🔒 Locked";
+          button.className = "row-btn locked-btn";
+          button.disabled = true;
+        } else if (rowData.isLocked) {
+          inputs.forEach(input => input.disabled = true);
+          button.textContent = `Edit (${2 - edits} left)`;
+        }
+      });
+
+      recalcAllWorkDone();
+      setSyncStatus("✅ Synced " + new Date().toLocaleTimeString());
+      })
+      .catch(err => {
+      console.error(err);
+      renderTable();
+      updateFormattedDate();
+      setSyncStatus("⚠️ Could not reach shared database — check internet / Web App URL");
+    });
+  }
+
+  function protectedReset() {
+    const enteredPin = prompt("Enter Password / PIN to reset daily entries:");
+    if (enteredPin === null) return;
+
+    if (enteredPin === RESET_PIN) {
+      if (confirm("Clear shift entries and start fresh? Equipment list & operators will be preserved.")) {
+        document.getElementById('supervisor').value = 'Chhotelal';
+        document.getElementById('logDatePicker').value = '2026-01-09';
+        document.getElementById('searchInput').value = '';
+        renderTable();
+        updateFormattedDate();
+        saveToStorage();
+        alert("Shift log entries reset successfully!");
+      }
+    } else {
+      alert("Incorrect PIN! Access denied.");
+    }
+  }
+
+  function submitLogToSheet() {
+    const meta = {
+      date: document.getElementById('printDateDisplay').textContent || document.getElementById('logDatePicker').value,
+      engineer: document.getElementById('engineer').value,
+      supervisor: document.getElementById('supervisor').value
+    };
+
+    const rows = [];
+    Array.from(tbody.children).forEach((row, index) => {
+      const eq = equipmentList[index] || {};
+      rows.push({
+        srNo: index + 1,
+        equipmentName: eq.name || '',
+        plateNo: eq.plate || '',
+        operator: eq.operator || '',
+        startTime: row.querySelector('.start-time').value,
+        endTime: row.querySelector('.end-time').value,
+        bdStart: row.querySelector('.bd-start').value,
+        bdEnd: row.querySelector('.bd-end').value,
+        meterStart: row.querySelector('.meter-start').value,
+        meterEnd: row.querySelector('.meter-end').value,
+        diesel: row.querySelector('.diesel-liters').value,
+        workArea: row.querySelector('.work-area').value,
+        workDone: row.querySelector('.work-done').value,
+        trips: row.querySelector('.trips-count') ? row.querySelector('.trips-count').value : 'N/A',
+        status: row.querySelector('.eq-status').value,
+        workHours: row.querySelector('.work-hours').value
+      });
+    });
+
+    fetch(WEBAPP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify({ action: 'submitLog', meta: meta, rows: rows })
+    }).catch(err => console.error('Sheet logging failed:', err));
+  }
+
+  function calculateTotalLoads() {
+    let total = 0;
+    Array.from(tbody.children).forEach(row => {
+      const tripsInput = row.querySelector('.trips-count');
+      if (tripsInput) {
+        const val = parseFloat(tripsInput.value);
+        if (!isNaN(val)) total += val;
+      }
+    });
+    document.getElementById('loadsTotalValue').textContent = total;
+  }
+
+  // Total Volume = sum of the numeric values found in the Work Done column
+  // (covers both the auto-computed Six Wheel / Dump Truck values and any
+  // manually entered numeric work-done figures), reported in m^3.
+  function calculateTotalVolume() {
+    let total = 0;
+    Array.from(tbody.children).forEach(row => {
+      const workDoneInput = row.querySelector('.work-done');
+      if (workDoneInput) {
+        const match = (workDoneInput.value || '').match(/-?\d+(\.\d+)?/);
+        if (match) {
+          const val = parseFloat(match[0]);
+          if (!isNaN(val)) total += val;
+        }
+      }
+    });
+    document.getElementById('volumeTotalValue').textContent = `${total} m\u00B3`;
+  }
+
+  function triggerPDF() {
+    document.getElementById('searchInput').value = '';
+    filterVehicles();
+    calculateTotalLoads();
+    calculateTotalVolume();
+    submitLogToSheet();
+    window.print();
+  }
+
+  window.onload = initAccessGate; // form only loads after an approved Google sign-in (see grantAccess)
+</script>
+
+</body>
+</html>
