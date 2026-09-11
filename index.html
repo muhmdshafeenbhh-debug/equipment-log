@@ -235,7 +235,12 @@
     const isVerified = payload && payload.email_verified;
 
     if (isVerified && ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(email)) {
-      try { sessionStorage.setItem('shuwaib_log_authed_email', email); } catch (e) {}
+      // Remembered on this device/browser for 90 days, so the user isn't
+      // asked to sign in again every time they open the link.
+      try {
+        localStorage.setItem('shuwaib_log_authed_email', email);
+        localStorage.setItem('shuwaib_log_authed_at', String(Date.now()));
+      } catch (e) {}
       grantAccess();
     } else {
       document.getElementById('accessDeniedBox').style.display = 'block';
@@ -244,9 +249,14 @@
   }
 
   function initAccessGate() {
-    let cachedEmail = null;
-    try { cachedEmail = sessionStorage.getItem('shuwaib_log_authed_email'); } catch (e) {}
-    if (cachedEmail && ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(cachedEmail.toLowerCase())) {
+    const REMEMBER_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+    let cachedEmail = null, cachedAt = 0;
+    try {
+      cachedEmail = localStorage.getItem('shuwaib_log_authed_email');
+      cachedAt = Number(localStorage.getItem('shuwaib_log_authed_at')) || 0;
+    } catch (e) {}
+    const stillFresh = cachedAt && (Date.now() - cachedAt) < REMEMBER_MS;
+    if (stillFresh && cachedEmail && ALLOWED_EMAILS.map(e => e.toLowerCase()).includes(cachedEmail.toLowerCase())) {
       grantAccess();
       return;
     }
