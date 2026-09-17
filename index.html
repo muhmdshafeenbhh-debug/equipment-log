@@ -319,6 +319,12 @@
     });
   }
 
+  // Standard shift window: 06:00 to 17:30, so Start/Stop default to these
+  // times. Users can still change them per-row if an operator's actual
+  // times differ.
+  const DEFAULT_SHIFT_START = "06:00";
+  const DEFAULT_SHIFT_END = "17:30";
+
   function appendRow(item, index) {
     const row = document.createElement('tr');
     row.setAttribute('data-searchable', `${item.name} ${item.plate} ${item.operator}`.toLowerCase());
@@ -344,8 +350,8 @@
       <td>
         <span class="operator-label">${item.operator}</span>
       </td>
-      <td><input type="time" class="start-time" onchange="calculateHours(${index}); saveToStorage();"></td>
-      <td><input type="time" class="end-time" onchange="calculateHours(${index}); saveToStorage();"></td>
+      <td><input type="time" class="start-time" value="${DEFAULT_SHIFT_START}" onchange="calculateHours(${index}); saveToStorage();"></td>
+      <td><input type="time" class="end-time" value="${DEFAULT_SHIFT_END}" onchange="calculateHours(${index}); saveToStorage();"></td>
       <td>
         <div style="display: flex; gap: 2px;">
           <input type="time" class="bd-start" onchange="calculateHours(${index}); saveToStorage();">
@@ -377,6 +383,9 @@
       </td>
     `;
     tbody.appendChild(row);
+    // Pre-fill Total Hrs for the default 06:00–17:30 shift (with the
+    // standard break deducted) right away, without waiting for onchange.
+    calculateHours(index);
   }
 
   // Six Wheel loaders and Dump Trucks get an automatically computed Work Done value.
@@ -492,8 +501,9 @@
 
     let grossMinutes = endMin - startMin;
 
-    const breakStart = 12 * 60; 
-    const breakEnd = 15 * 60;   
+    // Standard shift: 06:00–17:30 with a 1-hour break from 12:30 to 13:30.
+    const breakStart = 12 * 60 + 30; // 12:30 PM
+    const breakEnd = 13 * 60 + 30;   // 1:30 PM
 
     let standardBreakDeduction = 0;
     const overlapStart = Math.max(startMin, breakStart);
@@ -757,8 +767,8 @@
 
         row.querySelector('.meter-start').value = rowData.meterStart || '';
         row.querySelector('.meter-end').value = rowData.meterEnd || '';
-        row.querySelector('.start-time').value = rowData.startTime || '';
-        row.querySelector('.end-time').value = rowData.endTime || '';
+        row.querySelector('.start-time').value = rowData.startTime || DEFAULT_SHIFT_START;
+        row.querySelector('.end-time').value = rowData.endTime || DEFAULT_SHIFT_END;
         row.querySelector('.bd-start').value = rowData.bdStart || '';
         row.querySelector('.bd-end').value = rowData.bdEnd || '';
         row.querySelector('.diesel-liters').value = rowData.diesel || '';
